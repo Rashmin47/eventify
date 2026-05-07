@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "@neondatabase/auth/ui/tailwind";
 
 @theme {
   --color-background: #0b1120; /* Deep navy blue background */

@@ -14,7 +14,7 @@ export default async function NewEventPage() {
           <CardTitle>Create Event</CardTitle>
         </CardHeader>
         <CardContent>
-          <Form>
+          <Form action={createEventAction}>
             <FormField>
               <Label>Title</Label>
               <Input
@@ -48,9 +48,9 @@ export default async function NewEventPage() {
               <Input id="eventDate" name="eventDate" type="datetime-local" />
               <FormMessage>Optional, you can set this later.</FormMessage>
             </FormField>
-            <div>
-              <Button>Create Event</Button>
-              <Button>
+            <div className="flex items-center gap-3">
+              <Button type="submit">Create Event</Button>
+              <Button type="button" variant={"outline"} asChild>
                 <Link href={"/dashboard"}>Cancel</Link>
               </Button>
             </div>

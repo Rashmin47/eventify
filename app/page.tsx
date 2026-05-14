@@ -1,5 +1,15 @@
 import Link from "next/link";
 
+import {
+  ArrowRight,
+  CalendarDays,
+  CheckCircle2,
+  Link2,
+  Sparkles,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,63 +19,204 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { auth } from "@/lib/auth/server";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+const highlights = [
+  {
+    title: "Private invite links",
+    description: "Generate a unique RSVP URL for every event.",
+    icon: Link2,
+  },
+  {
+    title: "Real-time guest tracking",
+    description: "See Going, Maybe, and Not Going totals at a glance.",
+    icon: Users,
+  },
+  {
+    title: "A calmer workflow",
+    description: "A clean dashboard keeps the next action obvious.",
+    icon: ShieldCheck,
+  },
+];
+
+const steps = [
+  "Create a polished event in seconds.",
+  "Share an invite link with guests.",
+  "Track responses and follow up fast.",
+];
+
+export default async function Home() {
+  const { data: session } = await auth.getSession();
+  const signedIn = Boolean(session?.user);
+  const displayName = session?.user?.name ?? session?.user?.email ?? "there";
+
   return (
-    <div className="flex flex-1 flex-col gap-8">
-      <section className="space-y-4">
-        <Badge variant="secondary" className="w-fit">
-          Next.js 16 + Neon Auth + Neon Postgres
-        </Badge>
-        <h1 className="text-4xl font-semibold tracking-tight">
-          Plan events and track RSVPs fast
-        </h1>
-        <p className="max-w-2xl text-(--muted-foreground)">
-          Create events, share a unique invite link, and watch attendee status
-          update in real-time with Going, Maybe, and Not going counts.
-        </p>
-        <div className="flex flex-wrap gap-3">
-          <Button asChild>
-            <Link href="/auth/sign-up">Create account</Link>
-          </Button>
-          <Button variant="outline" asChild>
-            <Link href="/auth/sign-in">Sign in</Link>
-          </Button>
-          <Button variant="ghost" asChild>
-            <Link href="/dashboard">Open dashboard</Link>
-          </Button>
+    <div className="space-y-8">
+      <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="relative overflow-hidden rounded-[2rem] border border-border/70 bg-surface/80 p-8 shadow-2xl shadow-black/15 backdrop-blur">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(94,234,212,0.16),transparent_30%),radial-gradient(circle_at_bottom_left,rgba(56,189,248,0.12),transparent_26%)]" />
+          <div className="relative space-y-6">
+            <Badge className="w-fit border border-white/10 bg-white/5 text-foreground">
+              <Sparkles className="mr-2 size-3.5" />
+              Invite-first event planning
+            </Badge>
+            <div className="max-w-2xl space-y-4">
+              <h1 className="text-4xl font-semibold tracking-tight md:text-6xl">
+                Plan memorable events without spreadsheet chaos.
+              </h1>
+              <p className="text-base text-muted-foreground md:text-lg">
+                Create events, share polished invite links, and watch RSVPs
+                update in one calm workspace.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Button asChild>
+                <Link href={signedIn ? "/events/new" : "/auth/sign-up"}>
+                  {signedIn ? "Create event" : "Get started"}
+                </Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link href="/dashboard">Open dashboard</Link>
+              </Button>
+              {!signedIn ? (
+                <Button variant="ghost" asChild>
+                  <Link href="/auth/sign-in">Sign in</Link>
+                </Button>
+              ) : null}
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl border border-white/10 bg-black/10 p-4">
+                <div className="text-2xl font-semibold">3</div>
+                <div className="text-sm text-muted-foreground">
+                  Steps to launch
+                </div>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-black/10 p-4">
+                <div className="text-2xl font-semibold">1</div>
+                <div className="text-sm text-muted-foreground">
+                  Invite link per event
+                </div>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-black/10 p-4">
+                <div className="text-2xl font-semibold">0</div>
+                <div className="text-sm text-muted-foreground">
+                  Extra admin overhead
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-4">
+          <Card className="border-border/70 bg-surface/80 shadow-xl shadow-black/10 backdrop-blur">
+            <CardHeader>
+              <CardDescription>What you get</CardDescription>
+              <CardTitle className="text-2xl">
+                A focused planning hub for hosts and guests.
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm text-muted-foreground">
+              <p>
+                {signedIn
+                  ? `Welcome back, ${displayName}. Your dashboard is ready when you are.`
+                  : "Create one account and keep every guest list, invite, and response in one place."}
+              </p>
+              <div className="space-y-3">
+                {steps.map((step, index) => (
+                  <div key={step} className="flex items-start gap-3">
+                    <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/20 text-xs font-semibold text-primary">
+                      {index + 1}
+                    </span>
+                    <span className="text-foreground/90">{step}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/70 bg-surface/80 shadow-xl shadow-black/10 backdrop-blur">
+            <CardHeader>
+              <CardDescription>Built for real event work</CardDescription>
+              <CardTitle>Useful even before your first RSVP lands.</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-3 sm:grid-cols-3">
+              {highlights.map((item) => (
+                <div
+                  key={item.title}
+                  className="rounded-2xl border border-white/10 bg-black/10 p-4"
+                >
+                  <item.icon className="mb-3 size-5 text-primary" />
+                  <div className="font-medium text-foreground">
+                    {item.title}
+                  </div>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {item.description}
+                  </p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
         </div>
       </section>
 
       <section className="grid gap-4 md:grid-cols-3">
-        <Card>
+        <Card className="border-border/70 bg-surface/80 shadow-lg shadow-black/10 backdrop-blur">
           <CardHeader>
             <CardTitle>Create events</CardTitle>
             <CardDescription>
-              Set title, date, and details in seconds.
+              Set title, date, location, and details in a single form.
             </CardDescription>
           </CardHeader>
         </Card>
-        <Card>
+        <Card className="border-border/70 bg-surface/80 shadow-lg shadow-black/10 backdrop-blur">
           <CardHeader>
             <CardTitle>Share invite links</CardTitle>
             <CardDescription>
-              Generate a unique event token per event.
+              Generate a unique RSVP URL with one click.
             </CardDescription>
           </CardHeader>
         </Card>
-        <Card>
+        <Card className="border-border/70 bg-surface/80 shadow-lg shadow-black/10 backdrop-blur">
           <CardHeader>
             <CardTitle>Track attendance</CardTitle>
             <CardDescription>
-              See attendee list and response totals at a glance.
+              See attendee totals and response momentum at a glance.
             </CardDescription>
           </CardHeader>
-          <CardContent className="text-sm text-(--muted-foreground)">
-            Going, Maybe, and Not going are always up-to-date.
+          <CardContent className="text-sm text-muted-foreground">
+            Going, Maybe, and Not going stay visible wherever you need them.
           </CardContent>
         </Card>
       </section>
+
+      {!signedIn ? (
+        <section className="rounded-[2rem] border border-border/70 bg-surface/80 p-8 shadow-xl shadow-black/10 backdrop-blur">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="max-w-2xl space-y-2">
+              <Badge variant="secondary" className="w-fit">
+                No account yet?
+              </Badge>
+              <h2 className="text-2xl font-semibold tracking-tight">
+                Start with a clean event workspace and grow from there.
+              </h2>
+              <p className="text-muted-foreground">
+                Sign up once and reuse Eventify for dinners, launches, team
+                offsites, and any guest list you want to keep organized.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <Button asChild>
+                <Link href="/auth/sign-up">
+                  Create account <ArrowRight className="size-4" />
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

@@ -2,6 +2,8 @@ import { EventDetailContent } from "@/components/event-detail-content";
 import { getSession } from "@/lib/auth/server";
 import { redirect } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 export default async function EventDetailsPage({
   params,
 }: {

@@ -1,14 +1,17 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+
+import { RSVPStatus } from "@/app/generated/prisma/enums";
+
 import { getSession } from "../auth/server";
 import { prisma } from "../prisma";
-import { RSVPStatus } from "@/app/generated/prisma/enums";
 
 function parseCreateEvent(formData: FormData) {
   const title = String(formData.get("title") ?? "").trim();
   if (title.length < 3 || title.length > 120) {
-    throw new Error("STitle must be between 3 and 120 characters.");
+    throw new Error("Title must be between 3 and 120 characters.");
   }
   const description = String(formData.get("description") ?? "").trim();
   const location = String(formData.get("location") ?? "").trim();
@@ -43,60 +46,48 @@ function parseRsvp(formData: FormData) {
   return { name, email, status };
 }
 
-export async function createEventAction(formData: FormData) {
+async function ensureUserRecord() {
   const session = await getSession();
-  if (!session.data?.user?.id) {
+  const user = session.data?.user;
+
+  if (!user?.id) {
     throw new Error("Unauthorized");
   }
-  const userId = session.data.user.id;
+
+  const email = user.email || `user-${user.id}@auth.local`;
+
+  await prisma.user.upsert({
+    where: { id: user.id },
+    update: { email },
+    create: {
+      id: user.id,
+      email,
+    },
+  });
+
+  return { userId: user.id, email };
+}
+
+export async function createEventAction(formData: FormData) {
+  const { userId } = await ensureUserRecord();
   const input = parseCreateEvent(formData);
 
-  try {
-    // Ensure user exists in database
-    await prisma.user.upsert({
-      where: { id: userId },
-      update: {},
-      create: {
-        id: userId,
-        email: session.data.user.email || `user-${userId}@auth.local`,
-      },
-    });
+  const created = await prisma.event.create({
+    data: {
+      ownerUserId: userId,
+      title: input.title,
+      description: input.description || "",
+      location: input.location || "",
+      eventDate: input.eventDate ? new Date(input.eventDate) : null,
+    },
+  });
 
-    const created = await prisma.event.create({
-      data: {
-        ownerUserId: userId,
-        title: input.title,
-        description: input.description || "",
-        location: input.location || "",
-        eventDate: input.eventDate ? new Date(input.eventDate) : null,
-      },
-    });
-    redirect(`/events/${created.id}`);
-  } catch (err) {
-    // Let Next.js redirect errors propagate
-    if (err instanceof Error && err.message.includes("NEXT_REDIRECT")) {
-      throw err;
-    }
-    console.error(err);
-  }
+  revalidatePath("/dashboard");
+  redirect(`/events/${created.id}`);
 }
 
 export async function createInviteLinkAction(eventId: string) {
-  const session = await getSession();
-  if (!session.data?.user?.id) {
-    throw new Error("Unauthorized");
-  }
-  const userId = session.data.user.id;
-
-  // Ensure user exists in database
-  await prisma.user.upsert({
-    where: { id: userId },
-    update: {},
-    create: {
-      id: userId,
-      email: session.data.user.email || `user-${userId}@auth.local`,
-    },
-  });
+  const { userId } = await ensureUserRecord();
 
   const owns = await prisma.event.findFirst({
     where: { id: eventId, ownerUserId: userId },
@@ -114,6 +105,9 @@ export async function createInviteLinkAction(eventId: string) {
     create: { eventId, token },
     update: { token },
   });
+
+  revalidatePath(`/events/${eventId}`);
+  revalidatePath("/dashboard");
 }
 
 export async function submitOrUpdateRsvpAction(
@@ -122,53 +116,46 @@ export async function submitOrUpdateRsvpAction(
 ) {
   const input = parseRsvp(formData);
 
-  try {
-    const invite = await prisma.eventInvite.findFirst({
-      where: { token },
-      select: {
-        id: true,
-        event: {
-          select: { id: true },
-        },
+  const invite = await prisma.eventInvite.findFirst({
+    where: { token },
+    select: {
+      id: true,
+      event: {
+        select: { id: true },
       },
-    });
+    },
+  });
 
-    if (!invite) {
-      throw new Error("Invite link is invalid.");
-    }
-
-    const eventId = invite.event.id;
-    const emailNormalized = input.email.toLowerCase();
-
-    await prisma.eventRsvp.upsert({
-      where: {
-        eventId_emailNormalized: {
-          eventId,
-          emailNormalized,
-        },
-      },
-      create: {
-        eventId,
-        inviteId: invite.id,
-        name: input.name,
-        email: input.email,
-        emailNormalized,
-        status: input.status as RSVPStatus,
-      },
-      update: {
-        name: input.name,
-        status: input.status as RSVPStatus,
-        respondedAt: new Date(),
-      },
-    });
-
-    redirect(`/invite/${token}?submitted=1`);
-  } catch (err) {
-    // Let Next.js redirect errors propagate
-    if (err instanceof Error && err.message.includes("NEXT_REDIRECT")) {
-      throw err;
-    }
-    console.error(err);
-    throw err;
+  if (!invite) {
+    throw new Error("Invite link is invalid.");
   }
+
+  const eventId = invite.event.id;
+  const emailNormalized = input.email.toLowerCase();
+
+  await prisma.eventRsvp.upsert({
+    where: {
+      eventId_emailNormalized: {
+        eventId,
+        emailNormalized,
+      },
+    },
+    create: {
+      eventId,
+      inviteId: invite.id,
+      name: input.name,
+      email: input.email,
+      emailNormalized,
+      status: input.status as RSVPStatus,
+    },
+    update: {
+      name: input.name,
+      status: input.status as RSVPStatus,
+      respondedAt: new Date(),
+    },
+  });
+
+  revalidatePath(`/events/${eventId}`);
+  revalidatePath(`/invite/${token}`);
+  redirect(`/invite/${token}?submitted=1`);
 }

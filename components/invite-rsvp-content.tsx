@@ -1,9 +1,13 @@
 import Link from "next/link";
 import { Button } from "./ui/button";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import type { RVSPStatus as PrismaRsvpStatus } from "@/app/generated/prisma/enums";
 import { Badge } from "./ui/badge";
+import { notFound } from "next/navigation";
+import { Form, FormField } from "./ui/form";
+import { Label } from "./ui/label";
+import { Input } from "./ui/input";
+import { submitOrUpdateRsvpAction } from "@/lib/actions/events";
 
 export async function InviteRsvpContent({
   token,
@@ -27,64 +31,79 @@ export async function InviteRsvpContent({
     },
   });
 
-  const events = rows.map((e) => ({
-    id: e.id,
+  if (!row) {
+    notFound();
+  }
+
+  const e = row.event;
+  const event = {
     title: e.title,
-    eventDate: e.eventDate ? e.eventDate.toISOString() : null,
+    description: e.description,
     location: e.location,
-    ...countByStatus(e.rsvps),
-  }));
+    eventDate: e.eventDate ? e.eventDate.toISOString() : null,
+  };
+
+  const submitRsvpForToken = submitOrUpdateRsvpAction.bind(null, token);
+
   return (
-    <div className="flex flex-1 flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Your Events</h1>
+    <div className="mx-auto w-full max-w-2xl">
+      <Card>
+        <CardHeader className="space-y-3">
+          <Badge variant="secondary" className="w-fit">
+            RSVP
+          </Badge>
+          <CardTitle>{event.title}</CardTitle>
           <p className="text-sm text-[var(--muted-foreground)]">
-            Track attendee responses and manage invite links.
+            {event.eventDate
+              ? new Date(event.eventDate).toLocaleString()
+              : "No date selected"}
+            {event.location ? ` - ${event.location}` : ""}
           </p>
-        </div>
-        <Button asChild>
-          <Link href={"/event/new"}>Create event</Link>
-        </Button>
-      </div>
-      {events.length === 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>No events yet</CardTitle>
-          </CardHeader>
-          <CardContent>
+          {event.description ? (
             <p className="text-sm text-[var(--muted-foreground)]">
-              Create your first event to start collecting RSVPs.
+              {event.description}
             </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2">
-          {events.map((event) => (
-            <Card key={event.id}>
-              <CardHeader className="space-y-3">
-                <div className="flex items-center justify-between gap-2">
-                  <CardTitle>{event.title}</CardTitle>
-                  <Button size="sm" asChild>
-                    <Link href={`/events/${event.id}`}>Open</Link>
-                  </Button>
-                </div>
-                <div className="flex flex-wrap gap-2 text-xs">
-                  <Badge>Going: {event.goingCount} </Badge>
-                  <Badge variant="secondary">Maybe: {event.maybeCount} </Badge>
-                  <Badge variant="outline" /> Not Going: {event.notGoingCount}
-                </div>
-                <p>
-                  {event.eventDate
-                    ? new Date(event.eventDate).toLocaleString()
-                    : "No date selected"}
-                  {event.location ? `-${event.location}` : ""}
-                </p>
-              </CardHeader>
-            </Card>
-          ))}
-        </div>
-      )}
+          ) : null}
+        </CardHeader>
+        <CardContent>
+          {submitted ? (
+            <p className="mb-4 rounded-md border border-[var(--accent)]/50 bg-[var(--accent)]/15 p-3 text-sm text-[#e9dbff]">
+              Thanks. Your RSVP has been recorded (or updated).
+            </p>
+          ) : null}
+          <Form action={submitRsvpForToken}>
+            <FormField>
+              <Label htmlFor="name">Name</Label>
+              <Input id="name" name="name" required placeholder="Your name" />
+            </FormField>
+            <FormField>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                required
+                placeholder="you@example.com"
+              />
+            </FormField>
+            <FormField>
+              <Label htmlFor="status">Attendance</Label>
+              <select
+                id="status"
+                name="status"
+                required
+                defaultValue="going"
+                className="flex h-10 w-full rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--foreground)]"
+              >
+                <option value="going">Going</option>
+                <option value="maybe">Maybe</option>
+                <option value="not_going">Not going</option>
+              </select>
+            </FormField>
+            <Button type="submit">Submit RSVP</Button>
+          </Form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

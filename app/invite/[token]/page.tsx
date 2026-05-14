@@ -1,3 +1,5 @@
+import { InviteRsvpContent } from "@/components/invite-rsvp-content";
+
 export default async function InvitePage({
   params,
   searchParams,

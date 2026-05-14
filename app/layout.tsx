@@ -32,7 +32,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        <NeonAuthUIProvider authClient={authClient}>
+        <NeonAuthUIProvider authClient={authClient} defaultTheme="dark">
           <header className="border-b border-border bg-surface/90 backdrop-blur">
             <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
               <Link

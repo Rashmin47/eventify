@@ -5,29 +5,25 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import type { RVSPStatus as PrismaRsvpStatus } from "@/app/generated/prisma/enums";
 import { Badge } from "./ui/badge";
 
-export function countByStatus(rsvps: { status: PrismaRsvpStatus }[]) {
-  let goingCount = 0;
-  let maybeCount = 0;
-  let notGoingCount = 0;
-
-  for (const r of rsvps) {
-    if (r.status === "GOING") goingCount += 1;
-    else if (r.status === "MAYBE") maybeCount += 1;
-    else if (r.status === "NOT_GOING") notGoingCount += 1;
-  }
-  return { goingCount, maybeCount, notGoingCount };
-}
-
-export async function DashboardContent({ userId }: { userId: string }) {
-  const rows = await prisma.event.findMany({
-    where: { ownerUserId: userId },
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      title: true,
-      eventDate: true,
-      location: true,
-      rsvps: { select: { status: true } },
+export async function InviteRsvpContent({
+  token,
+  submitted,
+}: {
+  token: string;
+  submitted: boolean;
+}) {
+  const row = await prisma.eventInvite.findFirst({
+    where: { token },
+    include: {
+      event: {
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          location: true,
+          eventDate: true,
+        },
+      },
     },
   });
 

@@ -21,9 +21,9 @@ function parseCreateEvent(formData: FormData) {
   };
 }
 
-const RSVP_STATUSES = ["going", "maybe", "not_going"] as const;
+const RSVP_STATUSES = ["GOING", "MAYBE", "NOT_GOING"] as const;
 
-function isRsvpStatus(s: string): s is RsvpStatus {
+function isRsvpStatus(s: string): s is (typeof RSVP_STATUSES)[number] {
   return (RSVP_STATUSES as readonly string[]).includes(s);
 }
 
@@ -45,28 +45,58 @@ function parseRsvp(formData: FormData) {
 
 export async function createEventAction(formData: FormData) {
   const session = await getSession();
+  if (!session.data?.user?.id) {
+    throw new Error("Unauthorized");
+  }
   const userId = session.data.user.id;
   const input = parseCreateEvent(formData);
 
   try {
+    // Ensure user exists in database
+    await prisma.user.upsert({
+      where: { id: userId },
+      update: {},
+      create: {
+        id: userId,
+        email: session.data.user.email || `user-${userId}@auth.local`,
+      },
+    });
+
     const created = await prisma.event.create({
       data: {
         ownerUserId: userId,
         title: input.title,
-        description: input.description,
-        location: input.location,
+        description: input.description || "",
+        location: input.location || "",
         eventDate: input.eventDate ? new Date(input.eventDate) : null,
       },
     });
     redirect(`/events/${created.id}`);
   } catch (err) {
+    // Let Next.js redirect errors propagate
+    if (err instanceof Error && err.message.includes("NEXT_REDIRECT")) {
+      throw err;
+    }
     console.error(err);
   }
 }
 
 export async function createInviteLinkAction(eventId: string) {
   const session = await getSession();
+  if (!session.data?.user?.id) {
+    throw new Error("Unauthorized");
+  }
   const userId = session.data.user.id;
+
+  // Ensure user exists in database
+  await prisma.user.upsert({
+    where: { id: userId },
+    update: {},
+    create: {
+      id: userId,
+      email: session.data.user.email || `user-${userId}@auth.local`,
+    },
+  });
 
   const owns = await prisma.event.findFirst({
     where: { id: eventId, ownerUserId: userId },
@@ -92,44 +122,53 @@ export async function submitOrUpdateRsvpAction(
 ) {
   const input = parseRsvp(formData);
 
-  const invite = await prisma.eventInvite.findFirst({
-    where: { token },
-    select: {
-      id: true,
-      event: {
-        select: { id: true },
+  try {
+    const invite = await prisma.eventInvite.findFirst({
+      where: { token },
+      select: {
+        id: true,
+        event: {
+          select: { id: true },
+        },
       },
-    },
-  });
+    });
 
-  if (!invite) {
-    throw new Error("Invite link is invalid.");
-  }
+    if (!invite) {
+      throw new Error("Invite link is invalid.");
+    }
 
-  const eventId = invite.event.id;
-  const emailNormalized = input.email.toLowerCase();
+    const eventId = invite.event.id;
+    const emailNormalized = input.email.toLowerCase();
 
-  await prisma.eventRsvp.upsert({
-    where: {
-      eventId_emailNormalized: {
+    await prisma.eventRsvp.upsert({
+      where: {
+        eventId_emailNormalized: {
+          eventId,
+          emailNormalized,
+        },
+      },
+      create: {
         eventId,
+        inviteId: invite.id,
+        name: input.name,
+        email: input.email,
         emailNormalized,
+        status: input.status as RSVPStatus,
       },
-    },
-    create: {
-      eventId,
-      inviteId: invite.id,
-      name: input.name,
-      email: input.email,
-      emailNormalized,
-      status: input.status as RsvpStatus,
-    },
-    update: {
-      name: input.name,
-      status: input.status as RsvpStatus,
-      respondedAt: new Date(),
-    },
-  });
+      update: {
+        name: input.name,
+        status: input.status as RSVPStatus,
+        respondedAt: new Date(),
+      },
+    });
 
-  redirect(`/invite/${token}?submitted=1`);
+    redirect(`/invite/${token}?submitted=1`);
+  } catch (err) {
+    // Let Next.js redirect errors propagate
+    if (err instanceof Error && err.message.includes("NEXT_REDIRECT")) {
+      throw err;
+    }
+    console.error(err);
+    throw err;
+  }
 }

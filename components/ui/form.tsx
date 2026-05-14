@@ -13,7 +13,7 @@ function FormField({ className, ...props }: React.ComponentProps<"div">) {
 function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
   return (
     <p
-      className={cn("text-sm text-[var(--muted-foreground)]", className)}
+      className={cn("text-sm text-(--muted-foreground)", className)}
       {...props}
     />
   );

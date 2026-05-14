@@ -20,7 +20,7 @@ export default function Home() {
         <h1 className="text-4xl font-semibold tracking-tight">
           Plan events and track RSVPs fast
         </h1>
-        <p className="max-w-2xl text-[var(--muted-foreground)]">
+        <p className="max-w-2xl text-(--muted-foreground)">
           Create events, share a unique invite link, and watch attendee status
           update in real-time with Going, Maybe, and Not going counts.
         </p>
@@ -61,7 +61,7 @@ export default function Home() {
               See attendee list and response totals at a glance.
             </CardDescription>
           </CardHeader>
-          <CardContent className="text-sm text-[var(--muted-foreground)]">
+          <CardContent className="text-sm text-(--muted-foreground)">
             Going, Maybe, and Not going are always up-to-date.
           </CardContent>
         </Card>

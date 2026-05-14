@@ -62,17 +62,19 @@ model Event {
   id String @id @default(cuid())
   title String
   description String
-  date DateTime
+  eventDate DateTime?
   location String
   maxAttendees Int?
   isPublic Boolean @default(true)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  userId String
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ownerUserId String
+  ownerUser User @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
 
   rsvps RSVP[]
+  eventRsvps EventRsvp[]
+  invite EventInvite?
 }
 
 model RSVP {
@@ -87,6 +89,34 @@ model RSVP {
   event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@unique([userId, eventId])
+}
+
+model EventRsvp {
+  id String @id @default(cuid())
+  name String
+  email String
+  emailNormalized String
+  status RSVPStatus
+  respondedAt DateTime @default(now())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  eventId String
+  inviteId String
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  invite EventInvite @relation(fields: [inviteId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, emailNormalized])
+}
+
+model EventInvite {
+  id String @id @default(cuid())
+  rsvps EventRsvp[]
+  token String @unique
+  createdAt DateTime @default(now())
+
+  eventId String @unique
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
 }
 
 enum RSVPStatus {

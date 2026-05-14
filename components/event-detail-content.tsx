@@ -97,7 +97,7 @@ export async function EventDetailContent({
             {event.location ? ` - ${event.location}` : ""}
           </p>
           {event.description && (
-            <p className="max-w-2xl text-sm text-[var(--muted-foreground)]">
+            <p className="max-w-2xl text-sm text-(--muted-foreground)">
               {event.description}
             </p>
           )}
@@ -116,16 +116,16 @@ export async function EventDetailContent({
       <Card>
         <CardHeader>Invite Link</CardHeader>
         <CardContent className="space-y-3">
-          <p className="text-sm text-[var(--muted-foreground)]">
+          <p className="text-sm text-(--muted-foreground)">
             Share this link with guests so they can RSVP without creating an
             account.
           </p>
           {inviteUrl ? (
-            <div className="rounded-md border border-[var(--border)] bg-[var(--surface)] p-3 text-sm">
+            <div className="rounded-md border border-(--border) bg-(--surface) p-3 text-sm">
               {inviteUrl}
             </div>
           ) : (
-            <p className="text-sm text-[var(--muted-foreground)]">
+            <p className="text-sm text-(--muted-foreground)">
               No invite link generated yet.
             </p>
           )}
@@ -142,7 +142,7 @@ export async function EventDetailContent({
         </CardHeader>
         <CardContent>
           {rsvps.length === 0 ? (
-            <p className="text-sm text-[var(--muted-foreground)]">
+            <p className="text-sm text-(--muted-foreground)">
               No responses yet.
             </p>
           ) : (
@@ -157,14 +157,16 @@ export async function EventDetailContent({
               </TableHeader>
               <TableBody>
                 {rsvps.map((rsvp) => (
-                  <TableRow>
+                  <TableRow key={rsvp.id}>
                     <TableCell>{rsvp.name}</TableCell>
                     <TableCell>{rsvp.email}</TableCell>
                     <TableCell>
                       <Badge variant="secondary">
-                        {rsvp.status === "not_going"
+                        {rsvp.status === "NOT_GOING"
                           ? "Not Going"
-                          : rsvp.status}
+                          : rsvp.status === "GOING"
+                            ? "Going"
+                            : "Maybe"}
                       </Badge>
                     </TableCell>
                     <TableCell>

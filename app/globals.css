@@ -6,26 +6,26 @@
 @custom-variant dark (&:where(*));
 
 :root {
-  --background: #07111d;
-  --foreground: #eef5ff;
-  --card: #0d1a2d;
-  --card-foreground: #f4f8ff;
-  --popover: #0d1a2d;
-  --popover-foreground: #f4f8ff;
-  --primary: #5eead4;
-  --primary-foreground: #04111b;
-  --secondary: #12243d;
-  --secondary-foreground: #e2efff;
-  --muted: #12243d;
-  --muted-foreground: #9bb1ca;
-  --accent: #38bdf8;
-  --accent-foreground: #06101b;
-  --destructive: #fb7185;
-  --border: #22324b;
-  --input: #22324b;
-  --ring: #7dd3fc;
-  --surface: rgba(12, 23, 39, 0.88);
-  --surface-elevated: rgba(18, 31, 52, 0.94);
+  --background: #f4efe6;
+  --foreground: #1f1b16;
+  --card: #fbf8f2;
+  --card-foreground: #1f1b16;
+  --popover: #fbf8f2;
+  --popover-foreground: #1f1b16;
+  --primary: #2f2b26;
+  --primary-foreground: #f6f1e8;
+  --secondary: #e7dfd3;
+  --secondary-foreground: #1f1b16;
+  --muted: #eee6d8;
+  --muted-foreground: #6f665c;
+  --accent: #ddd3c2;
+  --accent-foreground: #1f1b16;
+  --destructive: #8f4a4a;
+  --border: #d9d0c2;
+  --input: #d9d0c2;
+  --ring: #7a6f61;
+  --surface: rgba(251, 248, 242, 0.92);
+  --surface-elevated: rgba(255, 253, 248, 0.98);
 }
 
 @theme inline {
@@ -49,46 +49,41 @@
   --color-ring: var(--ring);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-serif: var(--font-serif);
 }
 
 body {
   min-height: 100vh;
   background: var(--background);
   background-image:
-    radial-gradient(circle at 20% 20%, rgb(94 234 212 / 0.16), transparent 28%),
-    radial-gradient(circle at 82% 0%, rgb(56 189 248 / 0.18), transparent 24%),
-    radial-gradient(
-      circle at 50% 100%,
-      rgb(255 255 255 / 0.035),
-      transparent 32%
-    ),
-    linear-gradient(180deg, rgb(7 17 29 / 0.96), rgb(5 10 18 / 1));
+    radial-gradient(circle at top, rgb(255 255 255 / 0.7), transparent 32%),
+    linear-gradient(180deg, rgb(245 240 232), rgb(239 232 221));
   background-attachment: fixed;
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
 .dark {
-  --background: #07111d;
-  --foreground: #eef5ff;
-  --card: #0d1a2d;
-  --card-foreground: #f4f8ff;
-  --popover: #0d1a2d;
-  --popover-foreground: #f4f8ff;
-  --primary: #5eead4;
-  --primary-foreground: #04111b;
-  --secondary: #12243d;
-  --secondary-foreground: #e2efff;
-  --muted: #12243d;
-  --muted-foreground: #9bb1ca;
-  --accent: #38bdf8;
-  --accent-foreground: #06101b;
-  --destructive: #fb7185;
-  --border: #22324b;
-  --input: #22324b;
-  --ring: #7dd3fc;
-  --surface: rgba(12, 23, 39, 0.88);
-  --surface-elevated: rgba(18, 31, 52, 0.94);
+  --background: #f4efe6;
+  --foreground: #1f1b16;
+  --card: #fbf8f2;
+  --card-foreground: #1f1b16;
+  --popover: #fbf8f2;
+  --popover-foreground: #1f1b16;
+  --primary: #2f2b26;
+  --primary-foreground: #f6f1e8;
+  --secondary: #e7dfd3;
+  --secondary-foreground: #1f1b16;
+  --muted: #eee6d8;
+  --muted-foreground: #6f665c;
+  --accent: #ddd3c2;
+  --accent-foreground: #1f1b16;
+  --destructive: #8f4a4a;
+  --border: #d9d0c2;
+  --input: #d9d0c2;
+  --ring: #7a6f61;
+  --surface: rgba(251, 248, 242, 0.92);
+  --surface-elevated: rgba(255, 253, 248, 0.98);
 }
 
 @layer base {
@@ -100,5 +95,11 @@ body {
   }
   html {
     @apply font-sans;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-serif), Georgia, "Times New Roman", serif;
   }
 }

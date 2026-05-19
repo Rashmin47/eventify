@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowLeft, ShieldCheck } from "lucide-react";
 
 import { AuthView, authViewPaths } from "@neondatabase/auth/react";
 
@@ -28,20 +28,18 @@ export default async function AuthPage({
 
   return (
     <main className="mx-auto grid w-full max-w-6xl gap-8 py-8 lg:grid-cols-[1.05fr_0.95fr]">
-      <section className="relative overflow-hidden rounded-[2rem] border border-border/70 bg-surface/80 p-8 shadow-2xl shadow-black/15 backdrop-blur">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(94,234,212,0.18),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(56,189,248,0.14),transparent_24%)]" />
+      <section className="relative overflow-hidden rounded-3xl border border-border bg-card p-8 shadow-sm">
         <div className="relative space-y-6">
-          <Badge className="w-fit border border-white/10 bg-white/5 text-foreground">
-            <Sparkles className="mr-2 size-3.5" />
-            Secure account access
+          <Badge className="w-fit border border-border bg-muted/30 text-muted-foreground">
+            Account access
           </Badge>
           <div className="max-w-2xl space-y-4">
-            <h1 className="text-4xl font-semibold tracking-tight md:text-6xl">
-              Sign in once and manage every invite from the same place.
+            <h1 className="font-display text-4xl tracking-tight md:text-6xl">
+              Sign in once and keep every event in one workspace.
             </h1>
-            <p className="text-base text-muted-foreground md:text-lg">
-              Eventify uses Neon Auth to keep your event workspace and guest
-              sessions in sync without extra boilerplate.
+            <p className="max-w-xl text-base text-muted-foreground md:text-lg">
+              Use one account for creating events, sharing invite links, and
+              checking RSVP changes.
             </p>
           </div>
 
@@ -49,7 +47,7 @@ export default async function AuthPage({
             {authPoints.map((point) => (
               <div
                 key={point}
-                className="rounded-2xl border border-white/10 bg-black/10 p-4 text-sm text-foreground/90"
+                className="rounded-2xl border border-border bg-muted/20 p-4 text-sm text-foreground/90"
               >
                 <ShieldCheck className="mb-3 size-5 text-primary" />
                 {point}
@@ -71,9 +69,9 @@ export default async function AuthPage({
         </div>
       </section>
 
-      <section className="rounded-[2rem] border border-border/70 bg-background/70 p-4 shadow-xl shadow-black/10 backdrop-blur">
-        <Card className="border-border/70 bg-surface/80 p-0 shadow-none">
-          <div className="rounded-[1.5rem] border border-border/70 bg-background/80 p-4">
+      <section className="rounded-3xl border border-border bg-card p-4 shadow-sm">
+        <Card className="border-border bg-card p-0 shadow-none">
+          <div className="rounded-3xl border border-border bg-background/70 p-4">
             <AuthView path={path} />
           </div>
         </Card>

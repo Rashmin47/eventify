@@ -1,4 +1,5 @@
 import Link from "next/link";
+
 import {
   ArrowRight,
   CalendarDays,
@@ -7,7 +8,7 @@ import {
   Users,
 } from "lucide-react";
 
-import { createEventAction } from "@/lib/actions/events";
+import { updateEventAction } from "@/lib/actions/events";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,61 +22,95 @@ import { Form, FormField, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { notFound } from "next/navigation";
+import { prisma } from "@/lib/prisma";
 
-const creationTips = [
-  "Add a clear title so guests know what they are RSVPing to.",
-  "Use the invite link after saving to share a private RSVP flow.",
-  "You can leave date, location, or description blank and fill them later.",
-];
+function toDateTimeLocalInput(value: Date | null) {
+  if (!value) {
+    return "";
+  }
 
-export default function NewEventPage() {
+  const offset = value.getTimezoneOffset() * 60_000;
+  return new Date(value.getTime() - offset).toISOString().slice(0, 16);
+}
+
+export default async function EditEventPage({
+  params,
+}: {
+  params: Promise<{ eventId: string }>;
+}) {
+  const { eventId } = await params;
+
+  const row = await prisma.event.findFirst({
+    where: { id: eventId },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      location: true,
+      eventDate: true,
+      maxAttendees: true,
+      createdAt: true,
+      eventRsvps: {
+        select: { id: true },
+      },
+    },
+  });
+
+  if (!row) {
+    notFound();
+  }
+
+  const updateEventForId = updateEventAction.bind(null, row.id);
+
   return (
-    <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+    <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
       <section className="relative overflow-hidden rounded-4xl border border-border bg-card p-8 shadow-sm">
         <div className="relative space-y-6">
           <Badge className="w-fit border border-border bg-muted/30 text-muted-foreground">
-            New event
+            Edit event
           </Badge>
           <div className="space-y-4">
             <h1 className="font-display text-4xl tracking-tight">
-              Create a clear event page in a few minutes.
+              Keep the event current as plans change.
             </h1>
             <p className="max-w-xl text-muted-foreground">
-              Keep the form focused on the essentials so the event reads well
-              from the start.
+              Update the title, schedule, venue, or capacity without losing the
+              invite link or guest list.
             </p>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="rounded-2xl border border-border bg-muted/20 p-4">
               <CalendarDays className="mb-3 size-5 text-primary" />
-              <div className="text-sm font-medium text-foreground">Date</div>
+              <div className="text-sm font-medium text-foreground">Created</div>
               <p className="mt-1 text-sm text-muted-foreground">
-                Optional until you are ready.
+                {new Intl.DateTimeFormat(undefined, {
+                  dateStyle: "medium",
+                }).format(row.createdAt)}
               </p>
             </div>
             <div className="rounded-2xl border border-border bg-muted/20 p-4">
               <MapPin className="mb-3 size-5 text-primary" />
-              <div className="text-sm font-medium text-foreground">
-                Location
-              </div>
+              <div className="text-sm font-medium text-foreground">Venue</div>
               <p className="mt-1 text-sm text-muted-foreground">
-                Keep it flexible or use a precise venue.
+                {row.location || "No location set"}
               </p>
             </div>
             <div className="rounded-2xl border border-border bg-muted/20 p-4">
               <Users className="mb-3 size-5 text-primary" />
               <div className="text-sm font-medium text-foreground">RSVPs</div>
               <p className="mt-1 text-sm text-muted-foreground">
-                Track every response in one dashboard.
+                {row.eventRsvps.length} recorded response
+                {row.eventRsvps.length === 1 ? "" : "s"}
               </p>
             </div>
           </div>
 
           <Button variant="outline" asChild>
-            <Link href="/dashboard">
+            <Link href={`/events/${row.id}`}>
               <ArrowRight className="size-4 rotate-180" />
-              Back to dashboard
+              Back to event
             </Link>
           </Button>
         </div>
@@ -84,22 +119,22 @@ export default function NewEventPage() {
       <Card className="border-border bg-card shadow-sm">
         <CardHeader>
           <Badge variant="secondary" className="w-fit">
-            Event details
+            Edit details
           </Badge>
-          <CardTitle className="text-2xl">Fill out the basics</CardTitle>
+          <CardTitle className="text-2xl">Update the host view</CardTitle>
           <CardDescription>
-            This form creates the event and takes you straight to the invite
-            link screen.
+            Changes apply immediately and the invite link keeps working.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Form action={createEventAction}>
+          <Form action={updateEventForId}>
             <FormField>
               <Label htmlFor="title">Title</Label>
               <Input
                 id="title"
                 name="title"
                 required
+                defaultValue={row.title}
                 placeholder="Team dinner, launch party, workshop..."
               />
             </FormField>
@@ -109,11 +144,12 @@ export default function NewEventPage() {
               <Textarea
                 id="description"
                 name="description"
+                defaultValue={row.description}
                 placeholder="Optional details, agenda, dress code, or notes for guests."
                 className="min-h-32"
               />
               <FormMessage>
-                A good description helps guests decide quickly.
+                Use this for anything guests need to know before they RSVP.
               </FormMessage>
             </FormField>
 
@@ -123,14 +159,20 @@ export default function NewEventPage() {
                 <Input
                   id="location"
                   name="location"
+                  defaultValue={row.location}
                   placeholder="The Studio, Brooklyn"
                 />
               </FormField>
               <FormField>
                 <Label htmlFor="eventDate">Date and time</Label>
-                <Input id="eventDate" name="eventDate" type="datetime-local" />
+                <Input
+                  id="eventDate"
+                  name="eventDate"
+                  type="datetime-local"
+                  defaultValue={toDateTimeLocalInput(row.eventDate)}
+                />
                 <FormMessage>
-                  Optional for now. You can set or update it later.
+                  Leave it blank if you want to publish details later.
                 </FormMessage>
               </FormField>
             </div>
@@ -143,6 +185,7 @@ export default function NewEventPage() {
                 type="number"
                 min={1}
                 max={100000}
+                defaultValue={row.maxAttendees ?? ""}
                 placeholder="Optional attendee cap"
               />
               <FormMessage>
@@ -150,25 +193,10 @@ export default function NewEventPage() {
               </FormMessage>
             </FormField>
 
-            <div className="rounded-2xl border border-border bg-muted/20 p-4">
-              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                <Sparkles className="size-4 text-primary" />
-                Tips before you publish
-              </div>
-              <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-                {creationTips.map((tip) => (
-                  <li key={tip} className="flex items-start gap-2">
-                    <span className="mt-1 size-1.5 rounded-full bg-primary" />
-                    <span>{tip}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
             <div className="flex flex-wrap items-center gap-3 pt-2">
-              <Button type="submit">Create event</Button>
+              <Button type="submit">Save changes</Button>
               <Button type="button" variant="outline" asChild>
-                <Link href="/dashboard">Cancel</Link>
+                <Link href={`/events/${row.id}`}>Cancel</Link>
               </Button>
             </div>
           </Form>

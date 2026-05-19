@@ -3,9 +3,7 @@ import Link from "next/link";
 import {
   ArrowRight,
   CalendarDays,
-  CheckCircle2,
   Link2,
-  Sparkles,
   ShieldCheck,
   Users,
 } from "lucide-react";
@@ -55,20 +53,18 @@ export default async function Home() {
   return (
     <div className="space-y-8">
       <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="relative overflow-hidden rounded-[2rem] border border-border/70 bg-surface/80 p-8 shadow-2xl shadow-black/15 backdrop-blur">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(94,234,212,0.16),transparent_30%),radial-gradient(circle_at_bottom_left,rgba(56,189,248,0.12),transparent_26%)]" />
+        <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-8 shadow-sm">
           <div className="relative space-y-6">
-            <Badge className="w-fit border border-white/10 bg-white/5 text-foreground">
-              <Sparkles className="mr-2 size-3.5" />
-              Invite-first event planning
+            <Badge className="w-fit border border-border bg-muted/30 text-muted-foreground">
+              Event management platform
             </Badge>
             <div className="max-w-2xl space-y-4">
-              <h1 className="text-4xl font-semibold tracking-tight md:text-6xl">
-                Plan memorable events without spreadsheet chaos.
+              <h1 className="font-display text-4xl tracking-tight md:text-6xl">
+                Plan events, share invites, and manage RSVPs without noise.
               </h1>
-              <p className="text-base text-muted-foreground md:text-lg">
-                Create events, share polished invite links, and watch RSVPs
-                update in one calm workspace.
+              <p className="max-w-xl text-base text-muted-foreground md:text-lg">
+                A minimal host workspace for events that need a clean invite, a
+                clear guest list, and a simple way to keep plans moving.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
@@ -88,19 +84,19 @@ export default async function Home() {
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-white/10 bg-black/10 p-4">
+              <div className="rounded-2xl border border-border bg-muted/20 p-4">
                 <div className="text-2xl font-semibold">3</div>
                 <div className="text-sm text-muted-foreground">
                   Steps to launch
                 </div>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-black/10 p-4">
+              <div className="rounded-2xl border border-border bg-muted/20 p-4">
                 <div className="text-2xl font-semibold">1</div>
                 <div className="text-sm text-muted-foreground">
                   Invite link per event
                 </div>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-black/10 p-4">
+              <div className="rounded-2xl border border-border bg-muted/20 p-4">
                 <div className="text-2xl font-semibold">0</div>
                 <div className="text-sm text-muted-foreground">
                   Extra admin overhead
@@ -111,7 +107,7 @@ export default async function Home() {
         </div>
 
         <div className="grid gap-4">
-          <Card className="border-border/70 bg-surface/80 shadow-xl shadow-black/10 backdrop-blur">
+          <Card className="border-border bg-card shadow-sm">
             <CardHeader>
               <CardDescription>What you get</CardDescription>
               <CardTitle className="text-2xl">
@@ -137,7 +133,7 @@ export default async function Home() {
             </CardContent>
           </Card>
 
-          <Card className="border-border/70 bg-surface/80 shadow-xl shadow-black/10 backdrop-blur">
+          <Card className="border-border bg-card shadow-sm">
             <CardHeader>
               <CardDescription>Built for real event work</CardDescription>
               <CardTitle>Useful even before your first RSVP lands.</CardTitle>
@@ -146,7 +142,7 @@ export default async function Home() {
               {highlights.map((item) => (
                 <div
                   key={item.title}
-                  className="rounded-2xl border border-white/10 bg-black/10 p-4"
+                  className="rounded-2xl border border-border bg-muted/20 p-4"
                 >
                   <item.icon className="mb-3 size-5 text-primary" />
                   <div className="font-medium text-foreground">
@@ -163,7 +159,7 @@ export default async function Home() {
       </section>
 
       <section className="grid gap-4 md:grid-cols-3">
-        <Card className="border-border/70 bg-surface/80 shadow-lg shadow-black/10 backdrop-blur">
+        <Card className="border-border bg-card shadow-sm">
           <CardHeader>
             <CardTitle>Create events</CardTitle>
             <CardDescription>
@@ -171,7 +167,7 @@ export default async function Home() {
             </CardDescription>
           </CardHeader>
         </Card>
-        <Card className="border-border/70 bg-surface/80 shadow-lg shadow-black/10 backdrop-blur">
+        <Card className="border-border bg-card shadow-sm">
           <CardHeader>
             <CardTitle>Share invite links</CardTitle>
             <CardDescription>
@@ -179,7 +175,7 @@ export default async function Home() {
             </CardDescription>
           </CardHeader>
         </Card>
-        <Card className="border-border/70 bg-surface/80 shadow-lg shadow-black/10 backdrop-blur">
+        <Card className="border-border bg-card shadow-sm">
           <CardHeader>
             <CardTitle>Track attendance</CardTitle>
             <CardDescription>
@@ -193,7 +189,7 @@ export default async function Home() {
       </section>
 
       {!signedIn ? (
-        <section className="rounded-[2rem] border border-border/70 bg-surface/80 p-8 shadow-xl shadow-black/10 backdrop-blur">
+        <section className="rounded-3xl border border-border bg-card p-8 shadow-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="max-w-2xl space-y-2">
               <Badge variant="secondary" className="w-fit">

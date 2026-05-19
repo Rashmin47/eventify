@@ -5,11 +5,11 @@ import {
   Clock3,
   Link2,
   MapPin,
-  Sparkles,
   Users,
 } from "lucide-react";
 
 import { createInviteLinkAction } from "@/lib/actions/events";
+import { duplicateEventAction } from "@/lib/actions/events";
 import { CopyButton } from "./copy-button";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
@@ -42,14 +42,14 @@ function formatRsvpStatus(status: string) {
 
 function statusBadgeClass(status: string) {
   if (status === "GOING") {
-    return "border-emerald-500/25 bg-emerald-500/10 text-emerald-100";
+    return "border-border bg-muted/30 text-foreground";
   }
 
   if (status === "MAYBE") {
-    return "border-amber-500/25 bg-amber-500/10 text-amber-100";
+    return "border-border bg-muted/20 text-muted-foreground";
   }
 
-  return "border-rose-500/25 bg-rose-500/10 text-rose-100";
+  return "border-border bg-muted/10 text-muted-foreground";
 }
 
 export async function EventDetailContent({
@@ -67,6 +67,7 @@ export async function EventDetailContent({
       description: true,
       location: true,
       eventDate: true,
+      maxAttendees: true,
       createdAt: true,
       invite: { select: { token: true } },
       eventRsvps: {
@@ -92,6 +93,8 @@ export async function EventDetailContent({
   const responseShare = responseTotal
     ? Math.min(100, Math.round((counts.goingCount / responseTotal) * 100))
     : 0;
+  const remainingCapacity =
+    row.maxAttendees !== null ? row.maxAttendees - counts.goingCount : null;
   const eventDate = row.eventDate ? row.eventDate.toISOString() : null;
   const inviteUrl = row.invite?.token
     ? `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/invite/${row.invite.token}`
@@ -100,6 +103,7 @@ export async function EventDetailContent({
     null,
     row.id,
   );
+  const duplicateEventForEvent = duplicateEventAction.bind(null, row.id);
   const dateLabel = eventDate
     ? new Intl.DateTimeFormat(undefined, {
         dateStyle: "full",
@@ -110,11 +114,10 @@ export async function EventDetailContent({
   return (
     <div className="space-y-8">
       <section className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-        <Card className="overflow-hidden border-border/70 bg-surface/80 shadow-2xl shadow-black/10 backdrop-blur">
+        <Card className="overflow-hidden border-border bg-card shadow-sm">
           <CardHeader className="space-y-4">
             <div className="flex flex-wrap items-center gap-2 text-xs">
-              <Badge className="border border-white/10 bg-white/5 text-foreground">
-                <Sparkles className="mr-2 size-3.5" />
+              <Badge className="border border-border bg-muted/40 text-muted-foreground">
                 Event overview
               </Badge>
               <Badge variant="outline">
@@ -125,7 +128,7 @@ export async function EventDetailContent({
               </Badge>
             </div>
             <div className="space-y-3">
-              <CardTitle className="text-3xl md:text-4xl">
+              <CardTitle className="font-display text-3xl md:text-4xl">
                 {row.title}
               </CardTitle>
               <CardDescription className="text-base">
@@ -136,15 +139,15 @@ export async function EventDetailContent({
 
           <CardContent className="space-y-6">
             <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-white/10 bg-black/10 p-4">
-                <Clock3 className="mb-3 size-5 text-primary" />
+              <div className="rounded-2xl border border-border bg-muted/20 p-4">
+                <Clock3 className="mb-3 size-5 text-muted-foreground" />
                 <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
                   Date
                 </div>
                 <p className="mt-2 text-sm text-foreground">{dateLabel}</p>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-black/10 p-4">
-                <MapPin className="mb-3 size-5 text-primary" />
+              <div className="rounded-2xl border border-border bg-muted/20 p-4">
+                <MapPin className="mb-3 size-5 text-muted-foreground" />
                 <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
                   Location
                 </div>
@@ -152,13 +155,23 @@ export async function EventDetailContent({
                   {row.location || "No location set"}
                 </p>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-black/10 p-4">
-                <Users className="mb-3 size-5 text-primary" />
+              <div className="rounded-2xl border border-border bg-muted/20 p-4">
+                <Users className="mb-3 size-5 text-muted-foreground" />
                 <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
                   Responses
                 </div>
                 <p className="mt-2 text-sm text-foreground">
                   {responseTotal} response{responseTotal === 1 ? "" : "s"}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-border bg-muted/20 p-4">
+                <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                  Capacity
+                </div>
+                <p className="mt-2 text-sm text-foreground">
+                  {row.maxAttendees
+                    ? `${counts.goingCount}/${row.maxAttendees}`
+                    : "Unlimited"}
                 </p>
               </div>
             </div>
@@ -168,34 +181,45 @@ export async function EventDetailContent({
                 <span>Going share</span>
                 <span>{responseShare}% of responses</span>
               </div>
-              <div className="h-2 overflow-hidden rounded-full bg-white/10">
+              <div className="h-2 overflow-hidden rounded-full bg-muted/50">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-primary to-accent"
+                  className="h-full rounded-full bg-linear-to-r from-foreground to-muted-foreground"
                   style={{ width: `${responseShare}%` }}
                 />
               </div>
             </div>
 
             <div className="flex flex-wrap gap-2 text-xs">
-              <Badge className="border-emerald-500/25 bg-emerald-500/10 text-emerald-100">
+              <Badge className="border-border bg-muted/30 text-foreground">
                 Going: {counts.goingCount}
               </Badge>
-              <Badge className="border-amber-500/25 bg-amber-500/10 text-amber-100">
+              <Badge className="border-border bg-muted/20 text-muted-foreground">
                 Maybe: {counts.maybeCount}
               </Badge>
-              <Badge className="border-rose-500/25 bg-rose-500/10 text-rose-100">
+              <Badge className="border-border bg-muted/10 text-muted-foreground">
                 Not going: {counts.notGoingCount}
               </Badge>
             </div>
           </CardContent>
 
-          <CardFooter className="flex flex-wrap gap-3 border-t border-white/5 bg-black/10">
+          <CardFooter className="flex flex-wrap gap-3 border-t border-border bg-muted/10">
             <Button asChild variant="outline">
               <Link href="/dashboard">
                 Back to dashboard
                 <ArrowRight className="size-4 rotate-180" />
               </Link>
             </Button>
+            <Button asChild variant="outline">
+              <Link href={`/events/${row.id}/edit`}>Edit event</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href={`/events/${row.id}/delete`}>Delete</Link>
+            </Button>
+            <Form action={duplicateEventForEvent}>
+              <Button type="submit" variant="secondary">
+                Duplicate event
+              </Button>
+            </Form>
             {inviteUrl ? (
               <CopyButton value={inviteUrl} label="Copy invite" />
             ) : (
@@ -206,7 +230,7 @@ export async function EventDetailContent({
           </CardFooter>
         </Card>
 
-        <Card className="border-border/70 bg-surface/80 shadow-xl shadow-black/10 backdrop-blur">
+        <Card className="border-border bg-card shadow-sm">
           <CardHeader>
             <CardDescription>Invite status</CardDescription>
             <CardTitle className="text-2xl">Share the RSVP link</CardTitle>
@@ -216,9 +240,21 @@ export async function EventDetailContent({
               Guests can RSVP without creating an account. When the invite is
               ready, copy the link below and send it anywhere.
             </p>
+            {row.maxAttendees ? (
+              <div className="rounded-2xl border border-border bg-muted/20 p-4 text-foreground">
+                Capacity is limited to {row.maxAttendees} guest
+                {row.maxAttendees === 1 ? "" : "s"}.
+                {remainingCapacity !== null ? (
+                  <span className="block text-sm text-muted-foreground">
+                    {Math.max(remainingCapacity, 0)} spot
+                    {remainingCapacity === 1 ? "" : "s"} remain.
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
             {inviteUrl ? (
               <div className="space-y-3">
-                <div className="rounded-2xl border border-border/70 bg-background/80 p-4 text-foreground">
+                <div className="rounded-2xl border border-border bg-muted/20 p-4 text-foreground">
                   {inviteUrl}
                 </div>
                 <div className="flex flex-wrap gap-3">
@@ -232,7 +268,7 @@ export async function EventDetailContent({
                 </div>
               </div>
             ) : (
-              <div className="rounded-2xl border border-dashed border-border/70 bg-background/70 p-4">
+              <div className="rounded-2xl border border-dashed border-border bg-muted/10 p-4">
                 <p className="text-foreground">No invite link generated yet.</p>
                 <p className="mt-2 text-sm text-muted-foreground">
                   Generate one to start collecting responses from guests.
@@ -243,19 +279,19 @@ export async function EventDetailContent({
         </Card>
       </section>
 
-      <Card className="border-border/70 bg-surface/80 shadow-xl shadow-black/10 backdrop-blur">
+      <Card className="border-border bg-card shadow-sm">
         <CardHeader>
           <CardDescription>Guest list</CardDescription>
           <CardTitle>Recent responses</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {row.eventRsvps.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-border/70 bg-background/70 p-6 text-sm text-muted-foreground">
+            <div className="rounded-2xl border border-dashed border-border bg-muted/10 p-6 text-sm text-muted-foreground">
               No responses yet. Share the invite link and the first RSVP will
               appear here.
             </div>
           ) : (
-            <div className="overflow-hidden rounded-2xl border border-border/70">
+            <div className="overflow-hidden rounded-2xl border border-border">
               <Table>
                 <TableHeader>
                   <TableRow>

@@ -6,8 +6,6 @@ import {
   Link2,
   MapPin,
   Search,
-  Sparkles,
-  TrendingUp,
   Users,
 } from "lucide-react";
 
@@ -50,6 +48,7 @@ type DashboardEvent = {
   eventDate: string | null;
   createdAt: string;
   location: string;
+  maxAttendees: number | null;
   inviteToken: string | null;
   inviteUrl: string | null;
   goingCount: number;
@@ -80,8 +79,8 @@ function buildResponseShare(event: DashboardEvent) {
 
 function statusBadgeClass(isPast: boolean) {
   return isPast
-    ? "border-amber-500/25 bg-amber-500/10 text-amber-100"
-    : "border-emerald-500/25 bg-emerald-500/10 text-emerald-100";
+    ? "border-border bg-muted/60 text-muted-foreground"
+    : "border-border bg-muted/30 text-foreground";
 }
 
 export async function DashboardContent({
@@ -103,6 +102,7 @@ export async function DashboardContent({
       description: true,
       eventDate: true,
       location: true,
+      maxAttendees: true,
       createdAt: true,
       invite: { select: { token: true } },
       eventRsvps: { select: { status: true } },
@@ -125,6 +125,7 @@ export async function DashboardContent({
         eventDate: date,
         createdAt: event.createdAt.toISOString(),
         location: event.location,
+        maxAttendees: event.maxAttendees,
         inviteToken,
         inviteUrl,
         goingCount: counts.goingCount,
@@ -190,20 +191,18 @@ export async function DashboardContent({
   return (
     <div className="space-y-8">
       <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="relative overflow-hidden rounded-[2rem] border border-border/70 bg-surface/80 p-8 shadow-2xl shadow-black/15 backdrop-blur">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(94,234,212,0.16),transparent_30%),radial-gradient(circle_at_bottom_left,rgba(56,189,248,0.12),transparent_26%)]" />
+        <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-8 shadow-sm">
           <div className="relative space-y-6">
-            <Badge className="w-fit border border-white/10 bg-white/5 text-foreground">
-              <Sparkles className="mr-2 size-3.5" />
-              Your event command center
+            <Badge className="w-fit border border-border bg-muted/40 text-muted-foreground">
+              Event dashboard
             </Badge>
             <div className="max-w-2xl space-y-4">
-              <h1 className="text-4xl font-semibold tracking-tight md:text-6xl">
-                Keep every invite, RSVP, and guest list in one clear view.
+              <h1 className="font-display text-4xl tracking-tight md:text-6xl">
+                Keep every invite, RSVP, and guest list in one clean view.
               </h1>
-              <p className="text-base text-muted-foreground md:text-lg">
-                Search events, copy invite links, and see response momentum
-                without leaving the dashboard.
+              <p className="max-w-xl text-base text-muted-foreground md:text-lg">
+                Search events, open a guest list, copy invite links, and stay on
+                top of responses without leaving the dashboard.
               </p>
             </div>
 
@@ -217,20 +216,20 @@ export async function DashboardContent({
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-white/10 bg-black/10 p-4">
-                <CalendarDays className="mb-3 size-5 text-primary" />
+              <div className="rounded-2xl border border-border bg-muted/20 p-4">
+                <CalendarDays className="mb-3 size-5 text-muted-foreground" />
                 <div className="text-2xl font-semibold">{events.length}</div>
                 <div className="text-sm text-muted-foreground">
                   Events shown
                 </div>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-black/10 p-4">
-                <Users className="mb-3 size-5 text-primary" />
+              <div className="rounded-2xl border border-border bg-muted/20 p-4">
+                <Users className="mb-3 size-5 text-muted-foreground" />
                 <div className="text-2xl font-semibold">{totalResponses}</div>
                 <div className="text-sm text-muted-foreground">Total RSVPs</div>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-black/10 p-4">
-                <Link2 className="mb-3 size-5 text-primary" />
+              <div className="rounded-2xl border border-border bg-muted/20 p-4">
+                <Link2 className="mb-3 size-5 text-muted-foreground" />
                 <div className="text-2xl font-semibold">{inviteReadyCount}</div>
                 <div className="text-sm text-muted-foreground">
                   Invite links
@@ -241,10 +240,10 @@ export async function DashboardContent({
         </div>
 
         <div className="grid gap-4">
-          <Card className="border-border/70 bg-surface/80 shadow-xl shadow-black/10 backdrop-blur">
+          <Card className="border-border bg-card shadow-sm">
             <CardHeader>
               <CardDescription>Next up</CardDescription>
-              <CardTitle className="text-2xl">
+              <CardTitle className="font-display text-2xl">
                 {nextEvent ? nextEvent.title : "No events match this view"}
               </CardTitle>
             </CardHeader>
@@ -262,11 +261,11 @@ export async function DashboardContent({
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-foreground">
-                      <Clock3 className="size-4 text-primary" />
+                      <Clock3 className="size-4 text-muted-foreground" />
                       {nextEvent.dateLabel}
                     </div>
                     <div className="flex items-center gap-2">
-                      <MapPin className="size-4 text-primary" />
+                      <MapPin className="size-4 text-muted-foreground" />
                       {nextEvent.location || "No location set"}
                     </div>
                   </div>
@@ -295,7 +294,7 @@ export async function DashboardContent({
             </CardContent>
           </Card>
 
-          <Card className="border-border/70 bg-surface/80 shadow-xl shadow-black/10 backdrop-blur">
+          <Card className="border-border bg-card shadow-sm">
             <CardHeader>
               <CardDescription>Search and filter</CardDescription>
               <CardTitle>Find the right event quickly</CardTitle>
@@ -322,7 +321,7 @@ export async function DashboardContent({
                     id="view"
                     name="view"
                     defaultValue={view}
-                    className="flex h-10 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground"
+                    className="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
                   >
                     <option value="all">All events</option>
                     <option value="upcoming">Upcoming</option>
@@ -359,7 +358,7 @@ export async function DashboardContent({
         </div>
 
         {events.length === 0 ? (
-          <Card className="border-border/70 bg-surface/80 shadow-xl shadow-black/10 backdrop-blur">
+          <Card className="border-border bg-card shadow-sm">
             <CardHeader>
               <CardTitle>No events found</CardTitle>
               <CardDescription>
@@ -383,18 +382,23 @@ export async function DashboardContent({
               return (
                 <Card
                   key={event.id}
-                  className="border-border/70 bg-surface/80 shadow-lg shadow-black/10 backdrop-blur"
+                  className="border-border bg-card shadow-sm"
                 >
                   <CardHeader className="space-y-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="space-y-2">
                         <div className="flex flex-wrap items-center gap-2">
-                          <CardTitle className="text-xl">
+                          <CardTitle className="font-display text-xl">
                             {event.title}
                           </CardTitle>
                           <Badge className={statusBadgeClass(event.isPast)}>
                             {event.isPast ? "Past" : "Upcoming"}
                           </Badge>
+                          {event.maxAttendees ? (
+                            <Badge variant="outline">
+                              Capacity {event.goingCount}/{event.maxAttendees}
+                            </Badge>
+                          ) : null}
                         </div>
                         <CardDescription>
                           {event.dateLabel}
@@ -415,7 +419,7 @@ export async function DashboardContent({
 
                   <CardContent className="space-y-4">
                     <div className="grid gap-3 sm:grid-cols-3">
-                      <div className="rounded-2xl border border-white/10 bg-black/10 p-4">
+                      <div className="rounded-2xl border border-border bg-muted/20 p-4">
                         <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
                           Going
                         </div>
@@ -423,7 +427,7 @@ export async function DashboardContent({
                           {event.goingCount}
                         </div>
                       </div>
-                      <div className="rounded-2xl border border-white/10 bg-black/10 p-4">
+                      <div className="rounded-2xl border border-border bg-muted/20 p-4">
                         <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
                           Maybe
                         </div>
@@ -431,7 +435,7 @@ export async function DashboardContent({
                           {event.maybeCount}
                         </div>
                       </div>
-                      <div className="rounded-2xl border border-white/10 bg-black/10 p-4">
+                      <div className="rounded-2xl border border-border bg-muted/20 p-4">
                         <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
                           Not going
                         </div>
@@ -446,9 +450,9 @@ export async function DashboardContent({
                         <span>Going share</span>
                         <span>{responseShare}% of responses</span>
                       </div>
-                      <div className="h-2 overflow-hidden rounded-full bg-white/10">
+                      <div className="h-2 overflow-hidden rounded-full bg-muted/50">
                         <div
-                          className="h-full rounded-full bg-gradient-to-r from-primary to-accent"
+                          className="h-full rounded-full bg-linear-to-r from-foreground to-muted-foreground"
                           style={{ width: `${responseShare}%` }}
                         />
                       </div>
@@ -463,7 +467,7 @@ export async function DashboardContent({
                         Created {formatDate(event.createdAt)}
                       </Badge>
                       {event.inviteUrl ? (
-                        <Badge className="border-primary/20 bg-primary/10 text-primary">
+                        <Badge className="border-border bg-muted/40 text-foreground">
                           Invite ready
                         </Badge>
                       ) : (
@@ -472,19 +476,32 @@ export async function DashboardContent({
                     </div>
                   </CardContent>
 
-                  <CardFooter className="flex flex-wrap items-center justify-between gap-3 border-t border-white/5 bg-black/10">
+                  <CardFooter className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-muted/10">
                     <div className="text-xs text-muted-foreground">
                       {event.inviteUrl
-                        ? "Guests can RSVP with this link."
-                        : "Open the event to generate an invite link."}
+                        ? "Guests can RSVP with this link and you can manage the event anytime."
+                        : "Open the event to generate an invite link and edit details."}
                     </div>
-                    {event.inviteUrl ? (
-                      <CopyButton value={event.inviteUrl} label="Copy invite" />
-                    ) : (
+                    <div className="flex flex-wrap gap-2">
                       <Button variant="outline" size="sm" asChild>
-                        <Link href={`/events/${event.id}`}>Set up invite</Link>
+                        <Link href={`/events/${event.id}`}>Open</Link>
                       </Button>
-                    )}
+                      <Button variant="outline" size="sm" asChild>
+                        <Link href={`/events/${event.id}/edit`}>Edit</Link>
+                      </Button>
+                      {event.inviteUrl ? (
+                        <CopyButton
+                          value={event.inviteUrl}
+                          label="Copy invite"
+                        />
+                      ) : (
+                        <Button variant="outline" size="sm" asChild>
+                          <Link href={`/events/${event.id}`}>
+                            Set up invite
+                          </Link>
+                        </Button>
+                      )}
+                    </div>
                   </CardFooter>
                 </Card>
               );

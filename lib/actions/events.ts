@@ -8,7 +8,15 @@ import { RSVPStatus } from "@/app/generated/prisma/enums";
 import { getSession } from "../auth/server";
 import { prisma } from "../prisma";
 
-function parseCreateEvent(formData: FormData) {
+type EventInput = {
+  title: string;
+  description: string | null;
+  location: string | null;
+  eventDate: string | null;
+  maxAttendees: number | null;
+};
+
+function parseEventInput(formData: FormData): EventInput {
   const title = String(formData.get("title") ?? "").trim();
   if (title.length < 3 || title.length > 120) {
     throw new Error("Title must be between 3 and 120 characters.");
@@ -16,11 +24,23 @@ function parseCreateEvent(formData: FormData) {
   const description = String(formData.get("description") ?? "").trim();
   const location = String(formData.get("location") ?? "").trim();
   const eventDate = String(formData.get("eventDate") ?? "").trim();
+  const maxAttendeesRaw = String(formData.get("maxAttendees") ?? "").trim();
+  let maxAttendees: number | null = null;
+
+  if (maxAttendeesRaw.length) {
+    const parsed = Number.parseInt(maxAttendeesRaw, 10);
+    if (!Number.isFinite(parsed) || parsed < 1 || parsed > 100000) {
+      throw new Error("Capacity must be a whole number between 1 and 100000.");
+    }
+    maxAttendees = parsed;
+  }
+
   return {
     title,
     description: description.length ? description.slice(0, 2000) : null,
     location: location.length ? location.slice(0, 200) : null,
     eventDate: eventDate.length ? eventDate : null,
+    maxAttendees,
   };
 }
 
@@ -70,7 +90,7 @@ async function ensureUserRecord() {
 
 export async function createEventAction(formData: FormData) {
   const { userId } = await ensureUserRecord();
-  const input = parseCreateEvent(formData);
+  const input = parseEventInput(formData);
 
   const created = await prisma.event.create({
     data: {
@@ -79,11 +99,41 @@ export async function createEventAction(formData: FormData) {
       description: input.description || "",
       location: input.location || "",
       eventDate: input.eventDate ? new Date(input.eventDate) : null,
+      maxAttendees: input.maxAttendees,
     },
   });
 
   revalidatePath("/dashboard");
   redirect(`/events/${created.id}`);
+}
+
+export async function updateEventAction(eventId: string, formData: FormData) {
+  const { userId } = await ensureUserRecord();
+  const input = parseEventInput(formData);
+
+  const owns = await prisma.event.findFirst({
+    where: { id: eventId, ownerUserId: userId },
+    select: { id: true },
+  });
+
+  if (!owns) {
+    throw new Error("Event not found.");
+  }
+
+  await prisma.event.update({
+    where: { id: eventId },
+    data: {
+      title: input.title,
+      description: input.description || "",
+      location: input.location || "",
+      eventDate: input.eventDate ? new Date(input.eventDate) : null,
+      maxAttendees: input.maxAttendees,
+    },
+  });
+
+  revalidatePath(`/events/${eventId}`);
+  revalidatePath(`/events/${eventId}/edit`);
+  revalidatePath("/dashboard");
 }
 
 export async function createInviteLinkAction(eventId: string) {
@@ -110,6 +160,64 @@ export async function createInviteLinkAction(eventId: string) {
   revalidatePath("/dashboard");
 }
 
+export async function duplicateEventAction(eventId: string) {
+  const { userId } = await ensureUserRecord();
+
+  const source = await prisma.event.findFirst({
+    where: { id: eventId, ownerUserId: userId },
+    select: {
+      title: true,
+      description: true,
+      location: true,
+      eventDate: true,
+      maxAttendees: true,
+    },
+  });
+
+  if (!source) {
+    throw new Error("Event not found.");
+  }
+
+  const created = await prisma.event.create({
+    data: {
+      ownerUserId: userId,
+      title: `${source.title} Copy`,
+      description: source.description,
+      location: source.location,
+      eventDate: source.eventDate,
+      maxAttendees: source.maxAttendees,
+    },
+  });
+
+  revalidatePath("/dashboard");
+  redirect(`/events/${created.id}/edit`);
+}
+
+export async function deleteEventAction(eventId: string, formData: FormData) {
+  const { userId } = await ensureUserRecord();
+
+  const event = await prisma.event.findFirst({
+    where: { id: eventId, ownerUserId: userId },
+    select: { id: true, title: true },
+  });
+
+  if (!event) {
+    throw new Error("Event not found.");
+  }
+
+  const confirmTitle = String(formData.get("confirmTitle") ?? "").trim();
+  if (confirmTitle !== event.title) {
+    throw new Error("Type the event title exactly to confirm deletion.");
+  }
+
+  await prisma.event.delete({
+    where: { id: eventId },
+  });
+
+  revalidatePath("/dashboard");
+  redirect("/dashboard");
+}
+
 export async function submitOrUpdateRsvpAction(
   token: string,
   formData: FormData,
@@ -132,6 +240,45 @@ export async function submitOrUpdateRsvpAction(
 
   const eventId = invite.event.id;
   const emailNormalized = input.email.toLowerCase();
+  const currentEvent = await prisma.event.findUnique({
+    where: { id: eventId },
+    select: {
+      maxAttendees: true,
+      _count: {
+        select: {
+          eventRsvps: {
+            where: { status: "GOING" },
+          },
+        },
+      },
+    },
+  });
+
+  if (!currentEvent) {
+    throw new Error("Event not found.");
+  }
+
+  const existingRsvp = await prisma.eventRsvp.findUnique({
+    where: {
+      eventId_emailNormalized: {
+        eventId,
+        emailNormalized,
+      },
+    },
+    select: { status: true },
+  });
+
+  const goingCount = currentEvent._count.eventRsvps;
+  const isNewGoingResponse =
+    input.status === "GOING" && existingRsvp?.status !== "GOING";
+
+  if (
+    currentEvent.maxAttendees &&
+    isNewGoingResponse &&
+    goingCount >= currentEvent.maxAttendees
+  ) {
+    throw new Error("This event is at capacity for new Going responses.");
+  }
 
   await prisma.eventRsvp.upsert({
     where: {

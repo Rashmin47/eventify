@@ -1,12 +1,5 @@
 import Link from "next/link";
-import {
-  CheckCircle2,
-  Clock3,
-  Mail,
-  MapPin,
-  Sparkles,
-  Users,
-} from "lucide-react";
+import { CheckCircle2, Clock3, Mail, MapPin, Users } from "lucide-react";
 
 import { submitOrUpdateRsvpAction } from "@/lib/actions/events";
 import { Badge } from "./ui/badge";
@@ -41,6 +34,11 @@ export async function InviteRsvpContent({
           description: true,
           location: true,
           eventDate: true,
+          maxAttendees: true,
+          eventRsvps: {
+            where: { status: "GOING" },
+            select: { id: true },
+          },
         },
       },
     },
@@ -55,6 +53,8 @@ export async function InviteRsvpContent({
     description: row.event.description,
     location: row.event.location,
     eventDate: row.event.eventDate ? row.event.eventDate.toISOString() : null,
+    maxAttendees: row.event.maxAttendees,
+    goingCount: row.event.eventRsvps.length,
   };
 
   const submitRsvpForToken = submitOrUpdateRsvpAction.bind(null, token);
@@ -67,41 +67,50 @@ export async function InviteRsvpContent({
 
   return (
     <div className="mx-auto grid w-full max-w-5xl gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-      <section className="relative overflow-hidden rounded-[2rem] border border-border/70 bg-surface/80 p-8 shadow-2xl shadow-black/10 backdrop-blur">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(94,234,212,0.16),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(56,189,248,0.14),transparent_24%)]" />
+      <section className="relative overflow-hidden rounded-3xl border border-border bg-card p-8 shadow-sm">
         <div className="relative space-y-6">
-          <Badge className="w-fit border border-white/10 bg-white/5 text-foreground">
-            <Sparkles className="mr-2 size-3.5" />
+          <Badge className="w-fit border border-border bg-muted/40 text-muted-foreground">
             Private RSVP
           </Badge>
           <div className="space-y-4">
-            <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">
+            <h1 className="font-display text-4xl tracking-tight md:text-5xl">
               RSVP for {event.title}
             </h1>
-            <p className="text-muted-foreground">
+            <p className="max-w-xl text-muted-foreground">
               One response per email keeps the guest list tidy and lets people
               update their answer later.
             </p>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-2xl border border-white/10 bg-black/10 p-4">
-              <Clock3 className="mb-3 size-5 text-primary" />
+            <div className="rounded-2xl border border-border bg-muted/20 p-4">
+              <Clock3 className="mb-3 size-5 text-muted-foreground" />
               <div className="text-sm font-medium text-foreground">When</div>
               <p className="mt-1 text-sm text-muted-foreground">{dateLabel}</p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-black/10 p-4">
-              <MapPin className="mb-3 size-5 text-primary" />
+            <div className="rounded-2xl border border-border bg-muted/20 p-4">
+              <MapPin className="mb-3 size-5 text-muted-foreground" />
               <div className="text-sm font-medium text-foreground">Where</div>
               <p className="mt-1 text-sm text-muted-foreground">
                 {event.location || "Location not set"}
               </p>
             </div>
+            <div className="rounded-2xl border border-border bg-muted/20 p-4 sm:col-span-2">
+              <Users className="mb-3 size-5 text-muted-foreground" />
+              <div className="text-sm font-medium text-foreground">
+                RSVP rule
+              </div>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {event.maxAttendees
+                  ? `This event caps Going responses at ${event.maxAttendees}. ${Math.max(event.maxAttendees - event.goingCount, 0)} spots remain.`
+                  : "Guests can RSVP without a published capacity limit."}
+              </p>
+            </div>
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-black/10 p-4 text-sm text-muted-foreground">
+          <div className="rounded-2xl border border-border bg-muted/20 p-4 text-sm text-muted-foreground">
             <div className="mb-2 flex items-center gap-2 text-foreground">
-              <Users className="size-4 text-primary" />
+              <Users className="size-4 text-muted-foreground" />
               What this link does
             </div>
             <p>
@@ -111,9 +120,9 @@ export async function InviteRsvpContent({
           </div>
 
           {event.description ? (
-            <div className="rounded-2xl border border-white/10 bg-black/10 p-4 text-sm text-muted-foreground">
+            <div className="rounded-2xl border border-border bg-muted/20 p-4 text-sm text-muted-foreground">
               <div className="mb-2 flex items-center gap-2 text-foreground">
-                <Mail className="size-4 text-primary" />
+                <Mail className="size-4 text-muted-foreground" />
                 Event note
               </div>
               <p>{event.description}</p>
@@ -122,7 +131,7 @@ export async function InviteRsvpContent({
         </div>
       </section>
 
-      <Card className="border-border/70 bg-surface/80 shadow-xl shadow-black/10 backdrop-blur">
+      <Card className="border-border bg-card shadow-sm">
         <CardHeader>
           <Badge variant="secondary" className="w-fit">
             RSVP form
@@ -137,7 +146,7 @@ export async function InviteRsvpContent({
         </CardHeader>
         <CardContent className="space-y-4">
           {submitted ? (
-            <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-100">
+            <div className="rounded-2xl border border-border bg-muted/20 p-4 text-sm text-foreground">
               <div className="mb-2 flex items-center gap-2 font-medium">
                 <CheckCircle2 className="size-4" />
                 RSVP recorded
@@ -169,14 +178,14 @@ export async function InviteRsvpContent({
                 name="status"
                 required
                 defaultValue="GOING"
-                className="flex h-10 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground"
+                className="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
               >
                 <option value="GOING">Going</option>
                 <option value="MAYBE">Maybe</option>
                 <option value="NOT_GOING">Not going</option>
               </select>
             </FormField>
-            <div className="rounded-2xl border border-border/70 bg-background/80 p-4 text-sm text-muted-foreground">
+            <div className="rounded-2xl border border-border bg-muted/20 p-4 text-sm text-muted-foreground">
               Your RSVP updates immediately after submission.
             </div>
             <div className="flex flex-wrap items-center gap-3 pt-1">
